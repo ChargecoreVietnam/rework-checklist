@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Check list Rework</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root { --g: #1a9e4b; --line: #ccc; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.4 system-ui, sans-serif; background: #f2f4f3; color: #222; }
+  main { max-width: 640px; margin: auto; padding: 16px; }
+  header { text-align: center; }
+  header img { height: 36px; }
+  h1 { font-size: 20px; margin: 8px 0 16px; }
+  h2 { font-size: 17px; color: var(--g); margin: 24px 0 8px; }
+  .card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px #0001; }
+  .card b { display: block; margin-bottom: 4px; }
+  .card ul { margin: 0 0 10px; padding-left: 18px; font-size: 14px; color: #555; }
+  label.f { display: block; font-size: 14px; color: #555; margin-bottom: 10px; }
+  input[type=text], input[type=date], textarea { width: 100%; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 8px; margin-top: 4px; }
+  textarea { min-height: 44px; resize: vertical; }
+  .seg { display: flex; gap: 8px; margin-bottom: 8px; }
+  .seg label { flex: 1; }
+  .seg input { position: absolute; opacity: 0; }
+  .seg span { display: block; text-align: center; padding: 10px; border: 2px solid var(--line); border-radius: 8px; font-weight: 600; }
+  .seg input:checked + span { border-color: var(--g); background: var(--g); color: #fff; }
+  .seg input.bad:checked + span { border-color: #d33; background: #d33; }
+  .seg input:focus-visible + span { outline: 2px solid #000; }
+  #sig { width: 100%; height: 160px; background: #fff; border: 1px dashed #999; border-radius: 8px; touch-action: none; }
+  button { font: inherit; font-weight: 600; padding: 14px; border: 0; border-radius: 10px; width: 100%; margin-top: 8px; }
+  #go { background: var(--g); color: #fff; font-size: 18px; }
+  .ghost { background: #e4e7e5; }
+  dialog { width: calc(100% - 24px); max-width: 640px; max-height: calc(100% - 24px); padding: 12px; border: 0; border-radius: 12px; }
+  dialog::backdrop { background: #000a; }
+  .pv { max-height: 65vh; overflow: auto; border: 1px solid var(--line); }
+  .pv img { width: 100%; display: block; }
+  #save { background: var(--g); color: #fff; }
+
+  /* Printable sheet rendered to the image (fixed width, off-screen) */
+  #sheet { position: fixed; left: -9999px; top: 0; width: 820px; padding: 40px 48px; background: #fff; color: #000; font: 15px/1.45 "Times New Roman", serif; }
+  #sheet .hd { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; padding-bottom: 6px; font-weight: bold; }
+  #sheet .hd img { height: 34px; }
+  #sheet h3 { text-align: center; font-size: 20px; margin: 18px 0; }
+  #sheet h4 { margin: 14px 0 6px; font-size: 16px; }
+  #sheet p { margin: 3px 0; }
+  #sheet table { width: 100%; border-collapse: collapse; }
+  #sheet th, #sheet td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; text-align: left; }
+  #sheet th { background: #eee; text-align: center; }
+  #sheet ul { margin: 0; padding-left: 16px; }
+  #sheet .sign { margin-top: 18px; text-align: right; }
+  #sheet .sign img { height: 90px; display: block; margin-left: auto; }
+  #sheet .meta { margin-top: 24px; border-top: 1px solid #ccc; padding-top: 6px; font: 12px sans-serif; color: #666; }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="logo.png" alt="ChargeCore"><h1>CHECK LIST KIỂM TRA SAU KHI REWORK</h1></header>
+
+  <form id="f">
+    <div class="card">
+      <label class="f">Ngày<input type="date" name="date" required></label>
+      <label class="f">Mã trạm<input type="text" name="code" required></label>
+      <label class="f">Địa chỉ trạm<input type="text" name="addr"></label>
+      <label class="f">Thông tin thiết bị (serial number)<input type="text" name="sn"></label>
+    </div>
+    <div id="items"></div>
+
+    <h2>3. Kết luận / Conclusion</h2>
+    <div class="card">
+      <div class="seg">
+        <label><input type="radio" name="final" value="Đạt/ Pass" required><span>Đạt / Pass</span></label>
+        <label><input type="radio" name="final" value="Không đạt/ Not pass" class="bad"><span>Không đạt</span></label>
+      </div>
+      <label class="f">Ghi chú / Note<textarea name="finalNote"></textarea></label>
+    </div>
+
+    <h2>Kỹ sư chịu trách nhiệm / Responsible Engineer</h2>
+    <div class="card">
+      <label class="f">Họ tên<input type="text" name="engineer" required></label>
+      <div class="f">Chữ ký</div>
+      <canvas id="sig"></canvas>
+      <button type="button" class="ghost" id="clr">Xóa chữ ký</button>
+    </div>
+
+    <button id="go">Tạo ảnh & lưu</button>
+  </form>
+</main>
+
+<dialog id="dlg">
+  <div class="pv"><img id="pvImg" alt="Check list"></div>
+  <button id="save">Lưu ảnh</button>
+  <button class="ghost" id="close">Đóng</button>
+</dialog>
+
+<div id="sheet"></div>
+
+<script>
+const SECTIONS = [
+  ['1. Kiểm tra trước khi bật nguồn — Kiểm tra bằng mắt thường', [
+    ['Khóa', ['Lắp đặt chắc chắn trên backplate', 'Đã thay thế toàn bộ khóa ZZ', 'Không có dấu hiệu bị lệch, bị kẹt', 'Đảm bảo lắp đủ ốc để cố định, siết đủ lực theo tiêu chuẩn.']],
+    ['Conector', ['Đã thay thế đầy đủ ốc chống trượt, siết đủ lực theo tiêu chuẩn', 'Không có dấu hiệu bị lệch, kẹt.']],
+    ['Khoang pin', ['Không có dị vật bên trong khoang pin']],
+    ['Dây tín hiệu, dây nguồn', ['Dây tín hiệu được lắp đặt đúng vị trí', 'Không có dấu hiệu lỏng, kẹt, chưa kết nối']],
+  ]],
+  ['2. Kiểm tra sau khi bật nguồn', [
+    ['Kiểm tra điện áp', ['Điện áp đầu vào trong dải: 220V (±10%), không có hiện tượng ngắn mạch, bất thường khác.']],
+    ['Tính năng khóa và nhả pin', ['Bước 1: Tắt tủ, đẩy hết pin ra ngoài', 'Bước 2: Bật lại nguồn chờ BSS khởi động lại, đảm bảo BSS khởi động 2 lần và Pin ở ngoài tủ', 'Bước 3: Tủ self check thành công, cắm Pin vào tủ', 'Bước 4: Tủ sẽ đẩy Pin ra ngoài, làm liên tục 3 lần trên 1 khoang pin. 3 lần thực hiện tủ đều nhận và nhả pin lần đầu, không có dấu hiệu bị kẹt.']],
+  ]],
+];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const li = reqs => '<ul>' + reqs.map(r => `<li>${esc(r)}</li>`).join('') + '</ul>';
+
+// Build form cards
+let n = 0;
+document.getElementById('items').innerHTML = SECTIONS.map(([title, items]) =>
+  `<h2>${title}</h2>` + items.map(([name, reqs]) => { n++; return `
+    <div class="card"><b>${name}</b>${li(reqs)}
+      <div class="seg">
+        <label><input type="radio" name="r${n}" value="OK" required><span>OK</span></label>
+        <label><input type="radio" name="r${n}" value="NOK" class="bad"><span>NOK</span></label>
+      </div>
+      <textarea name="n${n}" placeholder="Ghi chú"></textarea>
+    </div>`; }).join('')
+).join('');
+document.querySelector('[name=date]').valueAsDate = new Date();
+
+// Signature pad
+const sig = document.getElementById('sig'), ctx = sig.getContext('2d');
+let drawing = false, signed = false;
+function sizeSig() { sig.width = sig.clientWidth * 2; sig.height = sig.clientHeight * 2; ctx.scale(2, 2); ctx.lineWidth = 2.5; ctx.lineCap = 'round'; signed = false; }
+sizeSig();
+const pt = e => { const r = sig.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+sig.onpointerdown = e => { drawing = signed = true; sig.setPointerCapture(e.pointerId); ctx.beginPath(); ctx.moveTo(...pt(e)); };
+sig.onpointermove = e => { if (drawing) { ctx.lineTo(...pt(e)); ctx.stroke(); } };
+sig.onpointerup = sig.onpointercancel = () => drawing = false;
+document.getElementById('clr').onclick = sizeSig;
+
+const dlg = document.getElementById('dlg'), pvImg = document.getElementById('pvImg');
+let pending;
+document.getElementById('close').onclick = () => dlg.close();
+document.getElementById('save').onclick = async () => {
+  // iOS/Android share sheet lets user "Save Image" to gallery; fallback to download
+  if (navigator.canShare?.({ files: [pending] })) {
+    await navigator.share({ files: [pending] }).catch(() => {});
+  } else {
+    Object.assign(document.createElement('a'), { href: pvImg.src, download: pending.name }).click();
+  }
+};
+
+const box = checked => checked ? '☑' : '☐';
+
+// Current GPS position as "lat, long" text; never rejects (8s timeout)
+const getLoc = () => new Promise(res => navigator.geolocation
+  ? navigator.geolocation.getCurrentPosition(
+      p => res(`Long: ${p.coords.longitude.toFixed(6)}, Lat: ${p.coords.latitude.toFixed(6)} (±${Math.round(p.coords.accuracy)}m)`),
+      () => res('không xác định (chưa cấp quyền vị trí)'),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 })
+  : res('không xác định'));
+
+document.getElementById('f').onsubmit = async e => {
+  e.preventDefault();
+  const btn = document.getElementById('go');
+  btn.disabled = true; btn.textContent = 'Đang lấy vị trí…';
+  const loc = await getLoc(), now = new Date().toLocaleString('vi-VN');
+  const d = new FormData(e.target), g = k => esc(d.get(k) || '');
+  const [y, m, dd] = (d.get('date') || '').split('-');
+  let i = 0;
+  document.getElementById('sheet').innerHTML = `
+    <div class="hd"><img src="logo.png"><span>CHARGECORE PTE. LTD</span></div>
+    <h3>CHECK LIST KIỂM TRA SAU KHI REWORK</h3>
+    <p><b>Ngày:</b> ${dd}/${m}/${y}</p>
+    <p><b>Mã trạm:</b> ${g('code')}</p>
+    <p><b>Địa chỉ trạm:</b> ${g('addr')}</p>
+    <p><b>Thông tin thiết bị (serial number):</b> ${g('sn')}</p>
+    ${SECTIONS.map(([title, items]) => `<h4>${title}</h4>
+      <table><tr><th style="width:20%">Hạng mục</th><th>Yêu cầu</th><th style="width:13%">Kết quả</th><th style="width:20%">Ghi chú</th></tr>
+      ${items.map(([name, reqs]) => { i++; const r = d.get('r' + i); return `<tr><td>${name}</td><td>${li(reqs)}</td>
+        <td>OK ${box(r === 'OK')}<br>NOK ${box(r === 'NOK')}</td><td>${g('n' + i)}</td></tr>`; }).join('')}
+      </table>`).join('')}
+    <h4>3. Kết luận / Conclusion</h4>
+    <table><tr><th>Kết luận / Conclusion</th><th>Ghi chú / Note</th></tr>
+      <tr><td>${box(d.get('final') === 'Đạt/ Pass')} Đạt/ Pass &nbsp;&nbsp; ${box(d.get('final') === 'Không đạt/ Not pass')} Không đạt/ Not pass</td><td>${g('finalNote')}</td></tr></table>
+    <div class="sign"><p><b>Kỹ sư chịu trách nhiệm / Responsible Engineer:</b></p>
+      ${signed ? `<img src="${sig.toDataURL()}">` : '<div style="height:60px"></div>'}
+      <p>${g('engineer')}</p></div>
+    <div class="meta">Thời gian: ${now} &nbsp;|&nbsp; ${loc}</div>`;
+
+  btn.textContent = 'Đang tạo ảnh…';
+  try {
+    const canvas = await html2canvas(document.getElementById('sheet'), { scale: 2, backgroundColor: '#fff' });
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const name = `checklist_${d.get('code') || 'tram'}_${d.get('date')}.png`.replace(/[^\w.-]/g, '_');
+    URL.revokeObjectURL(pvImg.src);
+    pvImg.src = URL.createObjectURL(blob);
+    pending = new File([blob], name, { type: 'image/png' });
+    dlg.showModal();
+  } catch (err) {
+    alert('Lỗi tạo ảnh: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Tạo ảnh & lưu';
+  }
+};
+</script>
+</body>
+</html>
