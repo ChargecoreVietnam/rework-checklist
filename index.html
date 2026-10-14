@@ -139,14 +139,8 @@ document.getElementById('clr').onclick = sizeSig;
 const dlg = document.getElementById('dlg'), pvImg = document.getElementById('pvImg');
 let pending;
 document.getElementById('close').onclick = () => dlg.close();
-document.getElementById('save').onclick = async () => {
-  // iOS/Android share sheet lets user "Save Image" to gallery; fallback to download
-  if (navigator.canShare?.({ files: [pending] })) {
-    await navigator.share({ files: [pending] }).catch(() => {});
-  } else {
-    Object.assign(document.createElement('a'), { href: pvImg.src, download: pending.name }).click();
-  }
-};
+document.getElementById('save').onclick = () =>
+  Object.assign(document.createElement('a'), { href: pvImg.src, download: pending.name }).click();
 
 const box = checked => checked ? '☑' : '☐';
 
