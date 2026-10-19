@@ -42,6 +42,9 @@
   #sheet .hd img { height: 34px; }
   #sheet h3 { text-align: center; font-size: 20px; margin: 18px 0; }
   #sheet h4 { margin: 14px 0 6px; font-size: 16px; }
+  #sheet h5 { margin: 0 0 6px; font-size: 15px; }
+  #sheet .ok { white-space: nowrap; vertical-align: middle; text-align: center; }
+  .x, #sheet .x { margin: 4px 0 0 16px; font-size: 14px; }
   #sheet p { margin: 3px 0; }
   #sheet table { width: 100%; border-collapse: collapse; }
   #sheet th, #sheet td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; text-align: left; }
@@ -96,15 +99,16 @@
 
 <script>
 const SECTIONS = [
-  ['1. Kiểm tra trước khi bật nguồn — Kiểm tra bằng mắt thường', [
-    ['Khóa', ['Lắp đặt chắc chắn trên backplate', 'Đã thay thế toàn bộ khóa ZZ', 'Không có dấu hiệu bị lệch, bị kẹt', 'Đảm bảo lắp đủ ốc để cố định, siết đủ lực theo tiêu chuẩn.']],
+  ['1. Kiểm tra trước khi bật nguồn', '1.1 Kiểm tra bằng mắt thường', [
+    ['Khóa', ['Lắp đặt chắc chắn trên backplate', 'Đã thay thế toàn bộ khóa ZZ', 'Không có dấu hiệu bị lệch, bị kẹt', 'Đảm bảo lắp đủ ốc để cố định, siết đủ lực theo tiêu chuẩn.', 'Backplate lắp chắc chắn, siết đủ lực, không thiếu ốc với khoang pin.']],
     ['Conector', ['Đã thay thế đầy đủ ốc chống trượt, siết đủ lực theo tiêu chuẩn', 'Không có dấu hiệu bị lệch, kẹt.']],
     ['Khoang pin', ['Không có dị vật bên trong khoang pin']],
-    ['Dây tín hiệu, dây nguồn', ['Dây tín hiệu được lắp đặt đúng vị trí', 'Không có dấu hiệu lỏng, kẹt, chưa kết nối']],
+    ['Dây tín hiệu, dây nguồn', ['Dây tín hiệu được lắp đặt đúng vị trí', 'Không có dấu hiệu lỏng chưa kết nối']],
   ]],
-  ['2. Kiểm tra sau khi bật nguồn', [
+  ['2. Kiểm tra sau khi bật nguồn', '', [
     ['Kiểm tra điện áp', ['Điện áp đầu vào trong dải: 220V (±10%), không có hiện tượng ngắn mạch, bất thường khác.']],
-    ['Tính năng khóa và nhả pin', ['Bước 1: Tắt tủ, đẩy hết pin ra ngoài', 'Bước 2: Bật lại nguồn chờ BSS khởi động lại, đảm bảo BSS khởi động 2 lần và Pin ở ngoài tủ', 'Bước 3: Tủ self check thành công, cắm Pin vào tủ', 'Bước 4: Tủ sẽ đẩy Pin ra ngoài, làm liên tục 3 lần trên 1 khoang pin. 3 lần thực hiện tủ đều nhận và nhả pin lần đầu, không có dấu hiệu bị kẹt.']],
+    ['Tính năng khóa và nhả pin', ['Bước 1: Cấp nguồn cho tủ và chờ tủ khởi động', 'Bước 2: Tắt tủ, đẩy hết pin ra ngoài', 'Bước 3: Bật lại nguồn chờ BSS khởi động lại, đảm bảo BSS khởi động 2 lần và Pin ở ngoài tủ', 'Bước 4: Tủ self check thành công, cắm Pin vào tủ', 'Bước 5: Tủ sẽ đẩy Pin ra ngoài, làm liên tục 3 lần trên 1 khoang pin.', '3 lần thực hiện tủ đều nhận và nhả pin lần đầu, không có dấu hiệu bị kẹt.']],
+    ['Phần mềm', ['Phiên bản phần mềm đúng với phiên bản mới nhất đã được release trên hệ thống'], 'QT: CC_260723_BSS6 / CC_260723_BSS12<br>CCR: v1.1.100.72<br>BCC: v1.0.0.59'],
   ]],
 ];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -112,9 +116,9 @@ const li = reqs => '<ul>' + reqs.map(r => `<li>${esc(r)}</li>`).join('') + '</ul
 
 // Build form cards
 let n = 0;
-document.getElementById('items').innerHTML = SECTIONS.map(([title, items]) =>
-  `<h2>${title}</h2>` + items.map(([name, reqs]) => { n++; return `
-    <div class="card"><b>${name}</b>${li(reqs)}
+document.getElementById('items').innerHTML = SECTIONS.map(([title, sub, items]) =>
+  `<h2>${title}</h2>` + items.map(([name, reqs, extra]) => { n++; return `
+    <div class="card"><b>${name}</b>${li(reqs)}${extra ? `<p class="x">${extra}</p>` : ''}
       <div class="seg">
         <label><input type="radio" name="r${n}" value="OK" required><span>OK</span></label>
         <label><input type="radio" name="r${n}" value="NOK" class="bad"><span>NOK</span></label>
@@ -166,17 +170,17 @@ document.getElementById('f').onsubmit = async e => {
     <p><b>Mã trạm:</b> ${g('code')}</p>
     <p><b>Địa chỉ trạm:</b> ${g('addr')}</p>
     <p><b>Thông tin thiết bị (serial number):</b> ${g('sn')}</p>
-    ${SECTIONS.map(([title, items]) => `<h4>${title}</h4>
+    ${SECTIONS.map(([title, sub, items]) => `<h4>${title}</h4>${sub ? `<h5>${sub}</h5>` : ''}
       <table><tr><th style="width:20%">Hạng mục</th><th>Yêu cầu</th><th style="width:13%">Kết quả</th><th style="width:20%">Ghi chú</th></tr>
-      ${items.map(([name, reqs]) => { i++; const r = d.get('r' + i); return `<tr><td>${name}</td><td>${li(reqs)}</td>
-        <td>OK ${box(r === 'OK')}<br>NOK ${box(r === 'NOK')}</td><td>${g('n' + i)}</td></tr>`; }).join('')}
+      ${items.map(([name, reqs, extra]) => { i++; const r = d.get('r' + i); return `<tr><td>${name}</td><td>${li(reqs)}${extra ? `<p class="x">${extra}</p>` : ''}</td>
+        <td class="ok">OK${box(r === 'OK')} NOK${box(r === 'NOK')}</td><td>${g('n' + i)}</td></tr>`; }).join('')}
       </table>`).join('')}
     <h4>3. Kết luận / Conclusion</h4>
     <table><tr><th>Kết luận / Conclusion</th><th>Ghi chú / Note</th></tr>
       <tr><td>${box(d.get('final') === 'Đạt/ Pass')} Đạt/ Pass &nbsp;&nbsp; ${box(d.get('final') === 'Không đạt/ Not pass')} Không đạt/ Not pass</td><td>${g('finalNote')}</td></tr></table>
     <div class="sign"><p><b>Kỹ sư chịu trách nhiệm / Responsible Engineer:</b></p>
       ${signed ? `<img src="${sig.toDataURL()}">` : '<div style="height:60px"></div>'}
-      <p>${g('engineer')}</p></div>
+      <p><i>(Ký, ghi rõ họ tên)</i></p><p>${g('engineer')}</p></div>
     <div class="meta">Thời gian: ${now} &nbsp;|&nbsp; ${loc}</div>`;
 
   btn.textContent = 'Đang tạo ảnh…';
