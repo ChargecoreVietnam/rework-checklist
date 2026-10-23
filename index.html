@@ -45,6 +45,9 @@
   #sheet h5 { margin: 0 0 6px; font-size: 15px; }
   #sheet .ok { white-space: nowrap; vertical-align: middle; text-align: center; }
   .x, #sheet .x { margin: 4px 0 0 16px; font-size: 14px; }
+  .fw { margin: 6px 0 10px; }
+  .fw p, #sheet .fw p { margin: 4px 0; }
+  .fw .v, #sheet .fw .v { color: #c00; font-family: "Times New Roman", serif; }
   #sheet p { margin: 3px 0; }
   #sheet table { width: 100%; border-collapse: collapse; }
   #sheet th, #sheet td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; text-align: left; }
@@ -108,9 +111,11 @@ const SECTIONS = [
   ['2. Kiểm tra sau khi bật nguồn', '', [
     ['Kiểm tra điện áp', ['Điện áp đầu vào trong dải: 220V (±10%), không có hiện tượng ngắn mạch, bất thường khác.']],
     ['Tính năng khóa và nhả pin', ['Bước 1: Cấp nguồn cho tủ và chờ tủ khởi động', 'Bước 2: Tắt tủ, đẩy hết pin ra ngoài', 'Bước 3: Bật lại nguồn chờ BSS khởi động lại, đảm bảo BSS khởi động 2 lần và Pin ở ngoài tủ', 'Bước 4: Tủ self check thành công, cắm Pin vào tủ', 'Bước 5: Tủ sẽ đẩy Pin ra ngoài, làm liên tục 3 lần trên 1 khoang pin.', '3 lần thực hiện tủ đều nhận và nhả pin lần đầu, không có dấu hiệu bị kẹt.']],
-    ['Phần mềm', ['Phiên bản phần mềm đúng với phiên bản mới nhất đã được release trên hệ thống'], 'QT: CC_260723_BSS6 / CC_260723_BSS12<br>CCR: v1.1.100.72<br>BCC: v1.0.0.59'],
+    ['Phần mềm', ['Phiên bản phần mềm đúng với phiên bản mới nhất đã được release trên hệ thống'], 'fw'],
   ]],
 ];
+// Firmware versions: [label, default] (editable in the form)
+const FW = [['QT', 'CC_260723_BSS6 / CC_260723_BSS12'], ['CCR', 'v1.1.100.72'], ['BCC', 'v1.0.0.59']];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const li = reqs => '<ul>' + reqs.map(r => `<li>${esc(r)}</li>`).join('') + '</ul>';
 
@@ -118,7 +123,8 @@ const li = reqs => '<ul>' + reqs.map(r => `<li>${esc(r)}</li>`).join('') + '</ul
 let n = 0;
 document.getElementById('items').innerHTML = SECTIONS.map(([title, sub, items]) =>
   `<h2>${title}</h2>` + items.map(([name, reqs, extra]) => { n++; return `
-    <div class="card"><b>${name}</b>${li(reqs)}${extra ? `<p class="x">${extra}</p>` : ''}
+    <div class="card"><b>${name}</b>${li(reqs)}${extra ? `<div class="fw">${FW.map(([k, v]) =>
+        `<label class="f">${k}<input type="text" name="fw${k}" value="${esc(v)}"></label>`).join('')}</div>` : ''}
       <div class="seg">
         <label><input type="radio" name="r${n}" value="OK" required><span>OK</span></label>
         <label><input type="radio" name="r${n}" value="NOK" class="bad"><span>NOK</span></label>
@@ -172,7 +178,8 @@ document.getElementById('f').onsubmit = async e => {
     <p><b>Thông tin thiết bị (serial number):</b> ${g('sn')}</p>
     ${SECTIONS.map(([title, sub, items]) => `<h4>${title}</h4>${sub ? `<h5>${sub}</h5>` : ''}
       <table><tr><th style="width:20%">Hạng mục</th><th>Yêu cầu</th><th style="width:13%">Kết quả</th><th style="width:20%">Ghi chú</th></tr>
-      ${items.map(([name, reqs, extra]) => { i++; const r = d.get('r' + i); return `<tr><td>${name}</td><td>${li(reqs)}${extra ? `<p class="x">${extra}</p>` : ''}</td>
+      ${items.map(([name, reqs, extra]) => { i++; const r = d.get('r' + i); return `<tr><td>${name}</td><td>${li(reqs)}${extra ? `<div class="fw"><p>Phiên bản phần mềm:</p>${FW.map(([k]) =>
+          `<p class="v">${k}: ${g('fw' + k)}</p>`).join('')}</div>` : ''}</td>
         <td class="ok">OK${box(r === 'OK')} NOK${box(r === 'NOK')}</td><td>${g('n' + i)}</td></tr>`; }).join('')}
       </table>`).join('')}
     <h4>3. Kết luận / Conclusion</h4>
